@@ -7,7 +7,8 @@ Shader "Hidden/AA"
     SubShader
     {
         // No culling or depth
-        Cull Off ZWrite Off ZTest Always Blend SrcAlpha OneMinusSrcAlpha
+        Cull Off ZWrite Off ZTest Always 
+        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {
