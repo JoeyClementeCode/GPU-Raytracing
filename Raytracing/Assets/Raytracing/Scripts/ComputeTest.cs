@@ -52,7 +52,13 @@ public class ComputeTest : MonoBehaviour
         public Matrix4x4 localToWorldMatrix;
         public int indices_offset;
         public int indices_count;
+        public Vector3 albedo;
+        public Vector3 specular;
+        public float smoothness;
+        public Vector3 emission;
+        public float emissionStrength;
     }
+
     private static List<MeshObject> _meshObjects = new List<MeshObject>();
     private static List<Vector3> _vertices = new List<Vector3>();
     private static List<int> _indices = new List<int>();
@@ -205,10 +211,17 @@ public class ComputeTest : MonoBehaviour
             {
                 localToWorldMatrix = obj.transform.localToWorldMatrix,
                 indices_offset = firstIndex,
-                indices_count = indices.Length
+                indices_count = indices.Length,
+                albedo = obj.material.color,
+                specular = obj.material.specularColor,
+                emission = obj.material.emission,
+                emissionStrength = obj.material.emissionStrength,
+                smoothness = obj.material.smoothness
             });
+
+            
         }
-        CreateComputeBuffer(ref _meshObjectBuffer, _meshObjects, 72);
+        CreateComputeBuffer(ref _meshObjectBuffer, _meshObjects, 116);
         CreateComputeBuffer(ref _vertexBuffer, _vertices, 12);
         CreateComputeBuffer(ref _indexBuffer, _indices, 4);
     }
