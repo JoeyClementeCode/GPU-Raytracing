@@ -9,7 +9,7 @@ using UnityEngine.Experimental.Rendering;
 
 using Random = UnityEngine.Random;
 
-//[ImageEffectAllowedInSceneView]
+[ImageEffectAllowedInSceneView]
 public class ComputeTest : MonoBehaviour
 {
     public ComputeShader computeShader;
@@ -22,8 +22,7 @@ public class ComputeTest : MonoBehaviour
     private uint currentSample = 0;
     public int seed;
     private Material AA;
-
-    [Range(1, 8)]
+    
     [SerializeField] private int maxReflections = 8;
 
     [Header("Sphere Parameters")]
@@ -89,6 +88,7 @@ public class ComputeTest : MonoBehaviour
     private void OnEnable()
     {
         currentSample = 0;
+        RebuildMeshObjectBuffers();
         SceneSetupActual();
     }
 
@@ -276,9 +276,6 @@ public class ComputeTest : MonoBehaviour
         int threadGroupsX = Mathf.CeilToInt(Screen.width / 16.0f);
         int threadGroupsY = Mathf.CeilToInt(Screen.height / 16.0f);
         computeShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
-
-        // Blit the result texture to the screen
-        Graphics.Blit(renderTexture, destination);
 
         // Anti-Aliasing
         if (AA == null)
