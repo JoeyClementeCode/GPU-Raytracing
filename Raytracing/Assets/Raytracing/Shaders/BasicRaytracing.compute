@@ -330,6 +330,8 @@ float3 Shade(inout Ray ray, RayHit hit)
             ray.energy = 0.0f;
         }
 
+        hit.emission *= hit.emissionStrength;
+        
         return hit.emission;
     }
     else
