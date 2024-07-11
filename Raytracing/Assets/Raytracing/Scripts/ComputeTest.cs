@@ -6,7 +6,6 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Experimental.Rendering;
-
 using Random = UnityEngine.Random;
 
 [ImageEffectAllowedInSceneView]
@@ -30,6 +29,9 @@ public class ComputeTest : MonoBehaviour
     [SerializeField] private int sphereCount = 100;
     [SerializeField] private float spherePlacementRadius = 100.0f;
     private ComputeBuffer sphereBuffer;
+
+    [Header("Info")]
+    [SerializeField] int numRenderedFrames;
 
 
     private static bool meshObjectsNeedRebuilding = false;
@@ -259,16 +261,48 @@ public class ComputeTest : MonoBehaviour
         }
     }
 
+    RenderTexture resultTexture;
+
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         RebuildMeshObjectBuffers();
         SetParams();
-        Render(dest);
+
+        // Create copy of prev frame
+        RenderTexture prevFrameCopy = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+        Graphics.Blit(resultTexture, prevFrameCopy);
+
+        // Run the ray tracing shader and draw the result to a temp texture
+        computeShader.SetInt("Frame", numRenderedFrames);
+        RenderTexture currentFrame = RenderTexture.GetTemporary(src.width, src.height, 0, GraphicsFormat.R32G32B32A32_SFloat);
+        Graphics.Blit(null, currentFrame);
+
+        // Accumulate
+        if (AA == null)
+        {
+            AA = new Material(Shader.Find("Hidden/AA"));
+        }
+
+        AA.SetInt("_Frame", numRenderedFrames);
+        AA.SetTexture("_PrevFrame", prevFrameCopy);
+        Graphics.Blit(currentFrame, resultTexture, AA);
+
+        // Draw result to screen
+        Graphics.Blit(resultTexture, dest);
+
+        // Release temps
+        RenderTexture.ReleaseTemporary(currentFrame);
+        RenderTexture.ReleaseTemporary(prevFrameCopy);
+        RenderTexture.ReleaseTemporary(currentFrame);
+
+        numRenderedFrames += Application.isPlaying ? 1 : 0;
     }
     
     private void Render(RenderTexture destination)
     {
-        // Make sure we have a current render target
+
+
+        /*// Make sure we have a current render target
         InitRenderTexture();
 
         // Set the target and dispatch the compute shader
@@ -285,12 +319,12 @@ public class ComputeTest : MonoBehaviour
         AA.SetFloat("_Sample", currentSample);
         Graphics.Blit(renderTexture, compositeBufferTexture, AA);
         Graphics.Blit(compositeBufferTexture, destination);
-        currentSample++;
+        currentSample++;*/
     }
 
     private void InitRenderTexture()
     {
-        if (renderTexture == null)
+        /*if (renderTexture == null)
         {
             // Release render texture if we already have one
             if (renderTexture != null)
@@ -310,7 +344,7 @@ public class ComputeTest : MonoBehaviour
             compositeBufferTexture.Create();
 
             currentSample = 0;
-        }
+        }*/
     }
 
     private void Awake()

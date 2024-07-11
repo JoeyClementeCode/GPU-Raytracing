@@ -38,13 +38,22 @@ Shader "Hidden/AA"
                 return o;
             }
 
-            sampler2D _MainTex;
-            float _Sample;
+			sampler2D _MainTex;
+			sampler2D _PrevFrame;
+			int _Frame;
 
-            fixed4 frag (v2f i) : SV_Target
-            {
-                return float4(tex2D(_MainTex, i.uv).rgb, 1.0f / (_Sample + 1.0f));
-            }
+			float4 frag (v2f i) : SV_Target
+			{
+				float4 col = tex2D(_MainTex, i.uv);
+				float4 colPrev = tex2D(_PrevFrame, i.uv);
+
+				float weight = 1.0 / (_Frame + 1);
+				// Combine prev frame with current frame. Weight the contributions to result in an average over all frames.
+				float4 accumulatedCol = saturate(colPrev * (1 - weight) + col * weight);
+				
+				return accumulatedCol;
+
+			}
             ENDCG
         }
     }

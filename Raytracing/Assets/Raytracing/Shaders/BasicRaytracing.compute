@@ -24,8 +24,9 @@ int _MaxReflections;
 float4 _DirectionalLight;
 
 // Randomness
-float2 _Pixel;
+float _NumPixels;
 float _Seed;
+int Frame;
 
 // Meshes
 struct MeshObject
@@ -96,11 +97,37 @@ struct Sphere
 };
 
 
-float rand()
+
+uint NextRandom(inout uint state)
 {
-    float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
-    _Seed += 1.0f;
+    state = state * 747796405 + 2891336453;
+    uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+    result = (result >> 22) ^ result;
     return result;
+}
+
+float RandomValue(inout uint state)
+{
+    return NextRandom(state) / 4294967295.0; // 2^32 - 1
+}
+
+// Random value in normal distribution (with mean=0 and sd=1)
+float RandomValueNormalDistribution(inout uint state)
+{
+				// Thanks to https://stackoverflow.com/a/6178290
+    float theta = 2 * 3.1415926 * RandomValue(state);
+    float rho = sqrt(-2 * log(RandomValue(state)));
+    return rho * cos(theta);
+}
+
+// Calculate a random direction
+float3 RandomDirection(inout uint state)
+{
+				// Thanks to https://math.stackexchange.com/a/1585996
+    float x = RandomValueNormalDistribution(state);
+    float y = RandomValueNormalDistribution(state);
+    float z = RandomValueNormalDistribution(state);
+    return normalize(float3(x, y, z));
 }
 
 float3x3 GetTangentSpace(float3 normal)
@@ -297,9 +324,53 @@ float SmoothnessToPhongAlpha(float s)
     return pow(1000.0f, s * s);
 }
 
-float3 Shade(inout Ray ray, RayHit hit)
+float3 Shade(inout Ray ray, inout RayHit hit, inout uint rngState)
 {
-    if (hit.distance < 1.#INF)
+    float3 incomingLight = 0;
+    float3 rayColour = 1;
+  
+    for (int i = 0; i < _MaxReflections; i++)
+    {
+        if (hit.distance < 1.#INF)
+        {
+						// Figure out new ray position and direction
+            bool isSpecularBounce = 0 >= RandomValue(rngState);
+					
+            ray.origin = hit.position;
+            float3 diffuseDir = normalize(hit.normal + RandomDirection(rngState));
+            float3 specularDir = reflect(ray.direction, hit.normal);
+            ray.direction = normalize(lerp(diffuseDir, specularDir, hit.smoothness * isSpecularBounce));
+
+						// Update light calculations
+            float3 emittedLight = hit.emission * hit.emissionStrength;
+            incomingLight += emittedLight * rayColour;
+            rayColour *= lerp(hit.albedo, hit.specular, isSpecularBounce);
+						
+						// Random early exit if ray colour is nearly 0 (can't contribute much to final result)
+            float p = max(rayColour.r, max(rayColour.g, rayColour.b));
+            if (RandomValue(0) >= p)
+            {
+                break;
+            }
+            rayColour *= 1.0f / p;
+        }
+        else
+        {
+            // Erase the ray's energy - the sky doesn't reflect anything
+            ray.energy = 0.0f;
+
+            // Sample the skybox and write it
+            float theta = acos(ray.direction.y) / -PI;
+            float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
+            incomingLight += _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * rayColour;
+            break;
+        }
+    }
+
+    return incomingLight;
+}
+    
+    /*if (hit.distance < 1.#INF)
     {
         // Calculate chances of diffuse and specular reflection
         hit.albedo = min(1.0f - hit.specular, hit.albedo);
@@ -343,8 +414,7 @@ float3 Shade(inout Ray ray, RayHit hit)
         float theta = acos(ray.direction.y) / -PI;
         float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
         return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz;
-    }
-}
+    }*/
 
 [numthreads(16,16,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -352,25 +422,28 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     uint width, height;
     Result.GetDimensions(width, height);
     
-    _Pixel = id.xy;
+    uint2 numPixels = id.xy;
     
     float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
+    
+    uint2 pixelCoord = uv * numPixels;
+    uint pixelIndex = pixelCoord.y * numPixels.x + pixelCoord.x;
+    uint rngState = pixelIndex + Frame * 719393;
 
     Ray ray = CreateCameraRay(uv);
 
     
     float3 result = float3(0.0f, 0.0f, 0.0f);
     
-    for (int i = 0; i < _MaxReflections; i++)
-    {
-        RayHit hit = Trace(ray);
-        result += ray.energy * Shade(ray, hit);
+    
+    RayHit hit = Trace(ray);
+    result += ray.energy * Shade(ray, hit, rngState);
         
-        if (!any(ray.energy))
-        {
-            break;
-        }
+    if (!any(ray.energy))
+    {
+        break;
     }
+
     
     Result[id.xy] = float4(result, 1);
 }

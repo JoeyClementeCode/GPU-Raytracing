@@ -157,7 +157,7 @@ MonoBehaviour:
   material:
     color: {x: 1, y: 1, z: 1}
     specularColor: {x: 1, y: 1, z: 1}
-    smoothness: 1
+    smoothness: 0.99
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 0
 --- !u!65 &142124796
@@ -725,7 +725,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4959da0805f9f45449f7d0b6ddf5810d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  computeShader: {fileID: 7200000, guid: 5f07183bda9c75346a6146c637173be5, type: 3}
+  computeShader: {fileID: 7200000, guid: 381ae187c1728d645962b32b7ccff88c, type: 3}
   skyboxTexture: {fileID: 2800000, guid: b108a9dca5254eb4b942313fae3fb981, type: 3}
   sun: {fileID: 1329942656}
   seed: 0
@@ -733,6 +733,7 @@ MonoBehaviour:
   sphereRadius: {x: 3, y: 8}
   sphereCount: 100
   spherePlacementRadius: 100
+  numRenderedFrames: 0
 --- !u!1 &1287620300
 GameObject:
   m_ObjectHideFlags: 0
@@ -1075,7 +1076,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
---- !u!21 &1622894460
+--- !u!21 &1516731759
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -1205,7 +1206,7 @@ MonoBehaviour:
   material:
     color: {x: 1, y: 1, z: 1}
     specularColor: {x: 1, y: 1, z: 1}
-    smoothness: 1
+    smoothness: 0.99
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 0
 --- !u!65 &1667653763
@@ -1456,7 +1457,7 @@ MonoBehaviour:
     smoothness: 0
     emission: {x: 0, y: 0, z: 0}
     emissionStrength: 1
-  materialObjectID: 23148
+  materialObjectID: 23146
   materialInitFlag: 1
 --- !u!135 &1962403747
 SphereCollider:
@@ -1499,7 +1500,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 1622894460}
+  - {fileID: 1516731759}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
