@@ -401,8 +401,6 @@ float3 Shade(inout Ray ray, inout RayHit hit, inout uint rngState)
             ray.energy = 0.0f;
         }
 
-        hit.emission *= hit.emissionStrength;
-        
         return hit.emission;
     }
     else

@@ -66,11 +66,6 @@ struct MeshObject
 	float4x4 localToWorldMatrix;
 	int indices_offset;
 	int indices_count;
-    float3 albedo;
-    float3 specular;  
-    float smoothness;
-    float3 emission;
-    float emissionStrength;
 };
 
 StructuredBuffer<MeshObject> _MeshObjects;
@@ -124,7 +119,6 @@ struct RayHit
     float3 specular;
     float smoothness;
     float3 emission;
-    float emissionStrength;
 };
 
 RayHit CreateRayHit()
@@ -137,7 +131,6 @@ RayHit CreateRayHit()
     hit.specular = float3(0.0f, 0.0f, 0.0f);
     hit.smoothness = 0.0f;
     hit.emission = float3(0.0f, 0.0f, 0.0f);
-    hit.emissionStrength = 1.0f;
     return hit;
 }
 
@@ -241,12 +234,11 @@ void IntersectMeshObject(Ray ray, inout RayHit bestHit, MeshObject meshObject)
 				bestHit.distance = t;
 				bestHit.position = ray.origin + t * ray.direction;
 				bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
-                bestHit.albedo = meshObject.albedo;
-                bestHit.specular = meshObject.specular;
-                bestHit.smoothness = meshObject.smoothness;
-                bestHit.emission = meshObject.emission;
-                bestHit.emissionStrength = meshObject.emissionStrength;
-            }
+				bestHit.albedo = 0.0f;
+				bestHit.specular = 0.65f;
+				bestHit.smoothness = 0.99f;
+				bestHit.emission = 0.0f;
+			}
 		}
 	}
 }
